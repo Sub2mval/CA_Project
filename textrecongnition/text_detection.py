@@ -44,8 +44,6 @@ def process_audio(audio_path):
     return {"text": text, "emotions": None}
 
 
-
-
 if __name__ == "__main__":
     print("Setting up")
 
