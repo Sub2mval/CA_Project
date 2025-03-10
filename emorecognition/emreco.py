@@ -52,18 +52,21 @@ def emo_predictor(audio_path):
         pred = model(wavs, mask)
         
     # Convert logits to probability
-    probabilities = torch.nn.functional.softmax(pred, dim=1)
-    
-    return model.config.id2label, probabilities
+    probabilities = torch.nn.functional.softmax(pred, dim=1).squeeze().numpy()
+       
+    # Convert to dictionary format
+    id2label = model.config.id2label
+    emotion_probs = {id2label[i]: probabilities[i] for i in range(len(probabilities))}
+
+    return emotion_probs
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
     # Count the seconds
     start_time = time.time()
-    id2label, probabilities = emo_predictor("m4atestfolder/suprise.m4a")
-    print("Time taken: ", time.time() - start_time)
-    print("Predicted Emotion:", id2label[torch.argmax(probabilities).item()])
-    print("Emotion Labels:", id2label)
-    print("Probabilities:", probabilities)
+    emotion_probs = emo_predictor("emorecognition/m4atestfolder/suprise.m4a")
     
+    # Display results
+    print("Time taken:", time.time() - start_time)
+    print("Emotion Probabilities:", emotion_probs)
     
