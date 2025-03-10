@@ -3,28 +3,14 @@ import numpy as np
 import wave
 import tempfile
 import tkinter as tk
-from tkinter import Label, Button
+from tkinter import ttk
 
 from text_detection import process_audio
 
 recording = []
 is_recording = False
 fs = 16000  # Sampling rate
-recording_stream = None  # Handle for the recording stream
-
-# Style Dictionary
-STYLE = {
-    "bg_color": "#f4f4f4",
-    "title_font": ("Arial", 24, "bold"),
-    "button_font": ("Arial", 16),
-    "button_width": 20,
-    "button_height": 2,
-    "button_start_color": "#4CAF50",
-    "button_text_color": "white",
-    "transcription_font": ("Arial", 18),
-    "exit_button_color": "gray",
-    "exit_button_font": ("Arial", 14),
-}
+recording_stream = None
 
 
 def callback(indata, frames, time, status):
@@ -38,13 +24,8 @@ def start_recording(event):
     global is_recording, recording, recording_stream
     recording = []
     is_recording = True
-
-    # Start audio stream
     recording_stream = sd.InputStream(callback=callback, samplerate=fs, channels=1)
     recording_stream.start()
-
-    # Schedule auto-stop after 10 sec
-    root.after(10000, stop_recording)
 
 
 def stop_recording(event=None):
@@ -74,44 +55,66 @@ def save_and_process_audio():
             wf.writeframes((audio_data * 32767).astype(np.int16).tobytes())
 
     result = process_audio(temp_wav.name)
-    transcription_label.config(text=result["text"])  # Update UI
+    add_message(result["text"], "right")  # User message
+    add_message("Okay", "left")  # Bot response
+
+
+def add_message(text, side):
+    """ Adds a new message bubble to the conversation """
+    bubble_frame = tk.Frame(chat_frame, bg='blue' if side == "right" else "green", padx=10, pady=5)
+    bubble_label = tk.Label(bubble_frame, text=text, wraplength=400, fg='white' if side == "right" else "black",
+                            bg='blue' if side == "right" else "green", font=("Arial", 14))
+    bubble_label.pack()
+    bubble_frame.pack(anchor="e" if side == "right" else "w", pady=5, padx=10)
+
+    chat_canvas.update_idletasks()
+    chat_canvas.yview_moveto(1)  # Auto-scroll
 
 
 def setup_ui():
-    global transcription_label, root
+    global root, chat_frame, chat_canvas
 
     root = tk.Tk()
-    root.title("Voice Detection")
-    root.attributes('-fullscreen', True)  # Full-screen mode
-    root.configure(bg=STYLE["bg_color"])
+    root.title("Voice Chat")
+    root.attributes('-fullscreen', True)
 
     # Title Label
-    title_label = Label(root, text="Speak with your friend", font=STYLE["title_font"], bg=STYLE["bg_color"])
-    title_label.pack(pady=50)
+    title_label = tk.Label(root, text="How are you doing?", font=("Arial", 24, "bold"))
+    title_label.pack(pady=20)
 
-    # Recording Button (Single button for start/stop)
-    record_button = Button(
-        root, text="Hold to Speak",
-        font=STYLE["button_font"], bg=STYLE["button_start_color"], fg=STYLE["button_text_color"],
-        width=STYLE["button_width"], height=STYLE["button_height"]
-    )
-    record_button.pack(pady=30)
+    # Conversation area (Centered, 60% width)
+    chat_container = tk.Frame(root, width=int(root.winfo_screenwidth() * 0.6))
+    chat_container.pack(pady=10, padx=20, fill=tk.BOTH, expand=True)
 
-    # Bind press and release actions
+    chat_canvas = tk.Canvas(chat_container)
+    scrollbar = ttk.Scrollbar(chat_container, orient="vertical", command=chat_canvas.yview)
+    chat_frame = tk.Frame(chat_canvas)
+
+    chat_frame.bind("<Configure>", lambda e: chat_canvas.configure(scrollregion=chat_canvas.bbox("all")))
+
+    chat_canvas.create_window((0, 0), window=chat_frame, anchor="nw", width=int(root.winfo_screenwidth() * 0.6))
+    chat_canvas.configure(yscrollcommand=scrollbar.set)
+
+    chat_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    # Button frame for Start & Stop Recording (aligned horizontally)
+    button_frame = tk.Frame(root)
+    button_frame.pack(pady=20)
+
+    record_button = tk.Button(button_frame, text="Start Recording", font=("Arial", 16), bg="#4CAF50", fg="white",
+                              width=15, height=2)
+    record_button.grid(row=0, column=0, padx=10)
     record_button.bind("<ButtonPress>", start_recording)
-    record_button.bind("<ButtonRelease>", stop_recording)
 
-    # Transcription Label
-    transcription_label = Label(root, text="Transcription will appear here...", font=STYLE["transcription_font"],
-                                bg=STYLE["bg_color"], wraplength=800)
-    transcription_label.pack(pady=30)
+    stop_button = tk.Button(button_frame, text="Stop Recording", font=("Arial", 16), bg="red", fg="white",
+                            width=15, height=2)
+    stop_button.grid(row=0, column=1, padx=10)
+    stop_button.bind("<ButtonRelease>", stop_recording)
 
-    # Close App Button
-    close_button = Button(
-        root, text="Exit", command=root.destroy, font=STYLE["exit_button_font"],
-        bg=STYLE["exit_button_color"], fg="white", width=15
-    )
-    close_button.pack(side=tk.BOTTOM, pady=20)
+    # Exit Button (Centered below)
+    exit_button = tk.Button(root, text="Exit", command=root.destroy, font=("Arial", 14), bg="gray", fg="white", width=15)
+    exit_button.pack(pady=20)
 
     root.mainloop()
 

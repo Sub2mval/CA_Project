@@ -39,9 +39,9 @@ def predict_emotion(audio_path):
 def process_audio(audio_path):
     # Process audio file: speech-to-text + emotion recognition
     text = transcribe_audio(audio_path)
-    emotion_probs = predict_emotion(audio_path)
-    emotion_dict = {EMOTIONS[i]: prob for i, prob in enumerate(emotion_probs)}
-    return {"text": text, "emotions": emotion_dict}
+    # emotion_probs = predict_emotion(audio_path)
+    # emotion_dict = {EMOTIONS[i]: prob for i, prob in enumerate(emotion_probs)}
+    return {"text": text, "emotions": None}
 
 
 
