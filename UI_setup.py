@@ -5,7 +5,8 @@ import tempfile
 import tkinter as tk
 from tkinter import ttk
 
-from text_detection import process_audio
+from textrecongnition.text_detection import process_audio
+from emorecognition.emreco import emo_predictor
 
 recording = []
 is_recording = False
@@ -55,6 +56,7 @@ def save_and_process_audio():
             wf.writeframes((audio_data * 32767).astype(np.int16).tobytes())
 
     result = process_audio(temp_wav.name)
+    emotion_probs = emo_predictor(temp_wav.name)
     add_message(result["text"], "right")  # User message
     add_message("Okay", "left")  # Bot response
 
