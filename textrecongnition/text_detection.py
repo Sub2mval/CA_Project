@@ -42,8 +42,10 @@ def process_audio(audio_path):
     # Process audio file: speech-to-text + emotion recognition
     text = transcribe_audio(audio_path)
     emotion_probs = emo_predictor(audio_path)
+    most_likely_emotion = max(emotion_probs, key = emotion_probs.get)
+    Emotion = EMOTIONS[most_likely_emotion]
     # emotion_dict = {EMOTIONS[i]: prob for i, prob in enumerate(emotion_probs)}
-    return {"text": text, "emotions": emotion_probs}
+    return {"text": text, "emotions": Emotion}
 
 
 if __name__ == "__main__":
