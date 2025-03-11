@@ -7,6 +7,7 @@ from tkinter import ttk
 
 from textrecongnition.text_detection import process_audio
 from emorecognition.emreco import emo_predictor
+from chains.main import conversational_rag_chain
 
 recording = []
 is_recording = False
@@ -41,6 +42,8 @@ def stop_recording(event=None):
 
     save_and_process_audio()
 
+def chain_response(text_result):
+    return conversational_rag_chain.invoke({"context": f"The user is currently feeling{text_result["emotions"]}", "input": text_result["text"]})
 
 def save_and_process_audio():
     """ Saves recorded audio and processes it """
@@ -56,9 +59,9 @@ def save_and_process_audio():
             wf.writeframes((audio_data * 32767).astype(np.int16).tobytes())
 
     result = process_audio(temp_wav.name)
-    emotion_probs = emo_predictor(temp_wav.name)
+    #emotion_probs = emo_predictor(temp_wav.name)
     add_message(result["text"], "right")  # User message
-    add_message("Okay", "left")  # Bot response
+    add_message(chain_response(result), "left")  # Bot response
 
 
 def add_message(text, side):
