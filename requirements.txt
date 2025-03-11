@@ -1,5 +1,5 @@
-transformers==4.49.0
-libros== 0.10.2.post1
+transformers
+librosa==0.10.2.post1
 torch==2.6.0
 pydub==0.25.1
 gTTS==2.5.4

@@ -64,7 +64,7 @@ if __name__ == '__main__':
     warnings.filterwarnings("ignore")
     # Count the seconds
     start_time = time.time()
-    emotion_probs = emo_predictor("emorecognition/m4atestfolder/suprise.m4a")
+    emotion_probs = emo_predictor("m4atestfolder/suprise.m4a")
     
     # Display results
     print("Time taken:", time.time() - start_time)
