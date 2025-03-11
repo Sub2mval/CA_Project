@@ -1,4 +1,4 @@
-# Emotion Detection - CA Project
+# Emotion & Speech Detection - CA Project
 
 ## Introduction
 
