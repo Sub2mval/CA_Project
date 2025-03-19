@@ -1,87 +1,76 @@
-import bs4
-from langchain.chains import create_history_aware_retriever, create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_chroma import Chroma
-from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_community.document_loaders import DirectoryLoader
-from langchain_core.chat_history import BaseChatMessageHistory
+from typing import Annotated
+from typing import Sequence
+
+from langchain_ollama import ChatOllama
+
+from langchain_core.messages import HumanMessage
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import START, MessagesState, StateGraph
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from typing_extensions import Annotated, TypedDict
+from langchain_core.messages import BaseMessage
+from langgraph.graph.message import add_messages
+from langchain_core.messages import SystemMessage, trim_messages
 
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-
-DATA_PATH = input("Enter Data Path")
-### Construct retriever ###
-loader = DirectoryLoader(
-    DATA_PATH,
-    glob = "*.pdf"
+llm = ChatOllama(
+    model="llama3.1",
+    temperature=0,
 )
-docs = loader.load()
 
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-splits = text_splitter.split_documents(docs)
-vectorstore = Chroma.from_documents(documents=splits, embedding=OpenAIEmbeddings())
-retriever = vectorstore.as_retriever()
-
-
-### Contextualize question ###
-contextualize_q_system_prompt = (
-    "Given a chat history and the latest user question "
-    "which might reference context in the chat history, "
-    "formulate a standalone question which can be understood "
-    "without the chat history. Do NOT answer the question, "
-    "just reformulate it if needed and otherwise return it as is."
-)
-contextualize_q_prompt = ChatPromptTemplate.from_messages(
+prompt_template = ChatPromptTemplate.from_messages(
     [
-        ("system", contextualize_q_system_prompt),
-        MessagesPlaceholder("chat_history"),
-        ("human", "{input}"),
+        (
+            "system",
+            "You are trying to lower student stress level to the best of your ability. Student is feeling {language}.",
+        ),
+        MessagesPlaceholder(variable_name="messages"),
     ]
 )
-history_aware_retriever = create_history_aware_retriever(
-    llm, retriever, contextualize_q_prompt
-)
+
+class MessagesState(TypedDict):
+    language: str
+    messages: Annotated[Sequence[BaseMessage], add_messages]
+    
+
+# Define a new graph
+workflow = StateGraph(state_schema=MessagesState)
 
 
-### Answer question ###
-system_prompt = (
-    "You are a professional therapist, and yu are charged with lowering student stress. "
-    "Use the following pieces of retrieved context to answer "
-    "the question. If you don't know the answer, say that you "
-    "don't know. Use three sentences maximum and keep the "
-    "answer concise."
-    "\n\n"
-    "{context}"
-)
-qa_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", system_prompt),
-        MessagesPlaceholder("chat_history"),
-        ("human", "{input}"),
-    ]
-)
-question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
-
-rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+# Define the function that calls the model
+def call_model(state: MessagesState):
+    prompt = prompt_template.invoke(
+        {"messages": state["messages"], "language": state["language"]}
+    )
+    response = llm.invoke(prompt)
+    return {"messages": response}
 
 
-### Statefully manage chat history ###
-store = {}
+# Define the (single) node in the graph
+workflow.add_edge(START, "model")
+workflow.add_node("model", call_model)
+
+# Add memory
+memory = MemorySaver()
+app = workflow.compile(checkpointer=memory)
+
+def conversational_rag_chain(input, id):
+    config = {"configurable": {"thread_id": id}}
+    query = input["input"]
+    lang = input["context"]
+    input_messages = [HumanMessage(query)]
+    output = app.invoke({
+        "messages": input_messages, "language": lang},
+        config)
+    output["messages"][-1].pretty_print()
+    
 
 
-def get_session_history(session_id: str) -> BaseChatMessageHistory:
-    if session_id not in store:
-        store[session_id] = ChatMessageHistory()
-    return store[session_id]
-
-
-conversational_rag_chain = RunnableWithMessageHistory(
-    rag_chain,
-    get_session_history,
-    input_messages_key="input",
-    history_messages_key="chat_history",
-    output_messages_key="answer",
-)
+if __name__ == "__main__":
+    query = input("Input: ")
+    lang = "Angry"
+    input_messages = [HumanMessage(query)]
+    output = app.invoke({
+        "messages": input_messages, "language": lang},
+        config)
+    output["messages"][-1].pretty_print()  # output contains all messages in state
+    
