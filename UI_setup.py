@@ -43,7 +43,9 @@ def stop_recording(event=None):
     save_and_process_audio()
 
 def chain_response(text_result):
-    return conversational_rag_chain.invoke({"context": f"The user is currently feeling{text_result["emotions"]}", "input": text_result["text"]})
+    return conversational_rag_chain({"context": text_result["emotions"], "input": text_result["text"]}, 1)
+
+#need to add a way of separating user threads
 
 def save_and_process_audio():
     """ Saves recorded audio and processes it """
