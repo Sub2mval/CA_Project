@@ -22,7 +22,8 @@ CA_PROJECT/
 │   │── text_detection.py  # Speech-to-text processing using Whisper
 │──UI_setup.py  # Tkinter-based voice chat UI
 │── .gitignore
-│── main.py  # Entry point to run emotion detection
+│── chains/
+│   │── main.py  # Chatbot
 │── requirements.txt  # List of dependencies
 ```
 
@@ -56,6 +57,14 @@ emotion_probs = emo_predictor(audio_file)
 
 print("Emotion Probabilities:", emotion_probs)
 ```
+## Main.py
+Requires Ollama to work properly
+
+Install Ollama according to system guide here: https://ollama.com/download
+
+Pull https://ollama.com/library/llama3.2
+
+Conversational_rag_agent() needs to be in a while true loop
 
 ## How to Use `process_audio` for Text Detection
 
