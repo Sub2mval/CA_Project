@@ -13,13 +13,25 @@ recording = []
 is_recording = False
 fs = 16000  # Sampling rate
 recording_stream = None
-
+DATA_DIR = Path("data/user_data")
+os.makedirs(DATA_DIR, exist_ok=True)
 
 def callback(indata, frames, time, status):
     """ Callback function to store recorded audio """
     if is_recording:
         recording.append(indata.copy())
 
+def load_initial_messages(user_id: str) -> list:
+    """Load previous messages for a user at the start of a conversation"""
+    user_file = DATA_DIR / f"{user_id}.json"
+    if user_file.exists():
+        try:
+            with open(user_file, 'r') as f:
+                # Load previous messages
+                return json.load(f)
+        except (IOError, json.JSONDecodeError) as e:
+            print(f"Error loading initial messages for {user_id}: {e}")
+    return []
 
 def start_recording(event):
     """ Starts recording when button is pressed """
@@ -43,7 +55,7 @@ def stop_recording(event=None):
     save_and_process_audio()
 
 def chain_response(text_result):
-    return conversational_rag_chain({"context": text_result["emotions"], "input": text_result["text"]}, 1)
+    return conversational_rag_chain({"context": text_result["emotions"], "input": text_result["text"],"user_id": current_user_id,"init_msg":"initial_messages": initial_messages}, 1)
 
 #need to add a way of separating user threads
 
@@ -79,12 +91,34 @@ def add_message(text, side):
 
 
 def setup_ui():
-    global root, chat_frame, chat_canvas
+    global root, chat_frame, chat_canvas,current_user_id
 
     root = tk.Tk()
     root.title("Voice Chat")
     root.attributes('-fullscreen', True)
 
+    login_frame = tk.Frame(root)
+    login_frame.pack(pady=50)
+
+    tk.Label(login_frame, text="Enter your username (eg, can be your student ID):", font=("Arial", 16)).pack()
+    user_entry = tk.Entry(login_frame, font=("Arial", 16))
+    user_entry.pack(pady=10)
+
+    def start_session():
+        global current_user_id
+        current_user_id = user_entry.get()
+        if not current_user_id:
+            current_user_id = "guest_" + str(int(time.time()))
+        initial_messages = load_initial_messages(current_user_id)
+        login_frame.destroy()
+        create_chat_interface()
+
+    tk.Button(login_frame, text="Start Session", command=start_session,
+              font=("Arial", 14), bg="#4CAF50", fg="white").pack()
+
+    root.mainloop()
+
+def create_chat_interface():
     # Title Label
     title_label = tk.Label(root, text="How are you doing?", font=("Arial", 24, "bold"))
     title_label.pack(pady=20)
