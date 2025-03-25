@@ -8,6 +8,7 @@ from tkinter import ttk
 from textrecongnition.text_detection import process_audio
 from emorecognition.emreco import emo_predictor
 from chains.main import conversational_rag_chain
+from textrecongnition.text_to_speech import text_to_speech
 
 recording = []
 is_recording = False
@@ -21,8 +22,13 @@ def callback(indata, frames, time, status):
         recording.append(indata.copy())
 
 
-def start_recording(event):
+def start_recording(event, record_button=None, stop_button = None):
     """ Starts recording when button is pressed """
+    # Change Start button appearance
+    if record_button:
+        record_button.config(relief=tk.SUNKEN, bg="#00804C", fg="#001F3F")  # Pressed color
+    if stop_button:
+        stop_button.config(relief=tk.SUNKEN, bg="#1E488F", fg="#001F3F")
     global is_recording, recording, recording_stream
     recording = []
     is_recording = True
@@ -30,8 +36,18 @@ def start_recording(event):
     recording_stream.start()
 
 
-def stop_recording(event=None):
-    """ Stops recording when button is released or after 10 seconds """
+
+
+def stop_recording(event=None, record_button=None, stop_button=None):
+    """ Stops recording when button is released """
+
+    # Reset Start button appearance
+    if record_button:
+        record_button.config(relief=tk.RAISED, bg="#74C365")  # Original greenish-teal
+
+    if stop_button:
+        stop_button.config(relief=tk.RAISED, bg="#001F3F")  # Stop button color
+
     global is_recording, recording_stream
     is_recording = False
 
@@ -42,10 +58,10 @@ def stop_recording(event=None):
 
     save_and_process_audio()
 
+
 def chain_response(text_result):
     return conversational_rag_chain({"context": text_result["emotions"], "input": text_result["text"]}, 1)
 
-#need to add a way of separating user threads
 
 def save_and_process_audio():
     """ Saves recorded audio and processes it """
@@ -61,16 +77,25 @@ def save_and_process_audio():
             wf.writeframes((audio_data * 32767).astype(np.int16).tobytes())
 
     result = process_audio(temp_wav.name)
-    #emotion_probs = emo_predictor(temp_wav.name)
     add_message(result["text"], "right")  # User message
-    add_message(chain_response(result), "left")  # Bot response
+    response = chain_response(result)
+    add_message(response, "left")  # Bot response
+
+    # Speak out the AI response
+    text_to_speech(response)  # Calls the TTS function
 
 
 def add_message(text, side):
     """ Adds a new message bubble to the conversation """
-    bubble_frame = tk.Frame(chat_frame, bg='blue' if side == "right" else "green", padx=10, pady=5)
-    bubble_label = tk.Label(bubble_frame, text=text, wraplength=400, fg='white' if side == "right" else "black",
-                            bg='blue' if side == "right" else "green", font=("Arial", 14))
+    bg_color = "#74C365" if side == "left" else "#001F3F"
+    fg_color = "#001F3F" if side == "left" else "#F6F7ED"
+
+    bubble_frame = tk.Frame(chat_frame, bg=bg_color, padx=10, pady=5)
+    bubble_label = tk.Label(
+        bubble_frame, text=text, wraplength=400,
+        fg=fg_color,
+        bg=bg_color, font=("Arial", 14)
+    )
     bubble_label.pack()
     bubble_frame.pack(anchor="e" if side == "right" else "w", pady=5, padx=10)
 
@@ -84,19 +109,19 @@ def setup_ui():
     root = tk.Tk()
     root.title("Voice Chat")
     root.attributes('-fullscreen', True)
+    root.configure(bg="#F6F7ED")  # Background color
 
     # Title Label
-    title_label = tk.Label(root, text="How are you doing?", font=("Arial", 24, "bold"))
+    title_label = tk.Label(root, text="How are you doing?", font=("Arial", 24, "bold"), fg="#00804C", bg="#F6F7ED")
     title_label.pack(pady=20)
 
     # Conversation area (Centered, 60% width)
-    chat_container = tk.Frame(root, width=int(root.winfo_screenwidth() * 0.6))
+    chat_container = tk.Frame(root, width=int(root.winfo_screenwidth() * 0.8), bg="#EFEFEF")
     chat_container.pack(pady=10, padx=20, fill=tk.BOTH, expand=True)
 
-    chat_canvas = tk.Canvas(chat_container)
+    chat_canvas = tk.Canvas(chat_container, bg="#F6F7ED")
     scrollbar = ttk.Scrollbar(chat_container, orient="vertical", command=chat_canvas.yview)
-    chat_frame = tk.Frame(chat_canvas)
-
+    chat_frame = tk.Frame(chat_canvas, bg="#F6F7ED")
     chat_frame.bind("<Configure>", lambda e: chat_canvas.configure(scrollregion=chat_canvas.bbox("all")))
 
     chat_canvas.create_window((0, 0), window=chat_frame, anchor="nw", width=int(root.winfo_screenwidth() * 0.6))
@@ -106,21 +131,21 @@ def setup_ui():
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     # Button frame for Start & Stop Recording (aligned horizontally)
-    button_frame = tk.Frame(root)
+    button_frame = tk.Frame(root, bg="#F6F7ED")
     button_frame.pack(pady=20)
 
-    record_button = tk.Button(button_frame, text="Start Recording", font=("Arial", 16), bg="#4CAF50", fg="white",
+    record_button = tk.Button(button_frame, text="Start Recording", font=("Arial", 16), bg="#74C365", fg="#001F3F",
                               width=15, height=2)
     record_button.grid(row=0, column=0, padx=10)
-    record_button.bind("<ButtonPress>", start_recording)
 
-    stop_button = tk.Button(button_frame, text="Stop Recording", font=("Arial", 16), bg="red", fg="white",
+    stop_button = tk.Button(button_frame, text="Stop Recording", font=("Arial", 16), bg="#1E488F", fg="#F6F7ED",
                             width=15, height=2)
     stop_button.grid(row=0, column=1, padx=10)
-    stop_button.bind("<ButtonRelease>", stop_recording)
-
+    stop_button.bind("<ButtonRelease>", lambda event: stop_recording(event, record_button, stop_button))
+    record_button.bind("<ButtonPress>", lambda event: start_recording(event, record_button, stop_button))
     # Exit Button (Centered below)
-    exit_button = tk.Button(root, text="Exit", command=root.destroy, font=("Arial", 14), bg="gray", fg="white", width=15)
+    exit_button = tk.Button(root, text="Exit", command=root.destroy, font=("Arial", 14), bg="gray", fg="white",
+                            width=15)
     exit_button.pack(pady=20)
 
     root.mainloop()

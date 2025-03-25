@@ -43,9 +43,11 @@ def process_audio(audio_path):
     text = transcribe_audio(audio_path)
     emotion_probs = emo_predictor(audio_path)
     most_likely_emotion = max(emotion_probs, key = emotion_probs.get)
-    Emotion = EMOTIONS[most_likely_emotion]
+    print("most_likely_emotion = ", most_likely_emotion)
+    # Emotion = EMOTIONS[most_likely_emotion]
+    # print("Emotion = ", Emotion)
     # emotion_dict = {EMOTIONS[i]: prob for i, prob in enumerate(emotion_probs)}
-    return {"text": text, "emotions": Emotion}
+    return {"text": text, "emotions": most_likely_emotion}
 
 
 if __name__ == "__main__":
