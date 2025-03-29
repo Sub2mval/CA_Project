@@ -7,6 +7,7 @@ from tkinter import ttk
 import json
 from pathlib import Path
 import os
+import time
 
 from textrecongnition.text_detection import process_audio
 from emorecognition.emreco import emo_predictor

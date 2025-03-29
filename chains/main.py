@@ -36,7 +36,7 @@ workflow = StateGraph(state_schema=MessagesState)
 # Define the function that calls the model
 def call_model(state: MessagesState):
     prompt = prompt_template.invoke(
-        {"messages": state["messages"], "language": state["language"]}
+        {"messages": state["messages"], "language": state.get("language", "en")} # , "language": state["language"]
     )
     response = llm.invoke(prompt)
     return {"messages": response}
