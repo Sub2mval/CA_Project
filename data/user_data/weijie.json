@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "type": "human",
+    "content": " hello why you"
+  },
+  {
+    "type": "ai",
+    "content": "================================== Ai Message ==================================\n\nHello! I'm here because I care about your well-being and want to help you manage your stress levels. It's completely normal to feel overwhelmed, especially with school and other responsibilities.\n\nCan you tell me a bit more about what's been going on that's making you feel stressed? Is it exams, assignments, relationships, or something else entirely? Sometimes talking about it can help us find ways to make things better.\n"
+  }
+]

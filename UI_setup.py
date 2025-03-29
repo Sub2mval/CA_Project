@@ -15,12 +15,14 @@ from chains.main import conversational_rag_chain
 from chains.main import store_init, store_messages_on_exit
 from chains.main import store_init_2, store_messages_on_exit_2
 from textrecongnition.text_to_speech import text_to_speech
+from langgraph.checkpoint.memory import MemorySaver
 
 recording = []
+full_conversation = []
 is_recording = False
 fs = 16000  # Sampling rate
 recording_stream = None
-
+memory = MemorySaver()
 DATA_DIR = Path("data/user_data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -29,18 +31,49 @@ def callback(indata, frames, time, status):
     if is_recording:
         recording.append(indata.copy())
 
-def load_initial_messages(user_id: str) -> list:
-    """Load previous messages for a user at the start of a conversation"""
+def save_conversation_history(user_id, conversation, data_dir):
+    user_file = data_dir / f"{user_id}.json"
+    try:
+        with open(user_file, "w", encoding="utf-8") as f:
+            json.dump(conversation, f, indent=2, ensure_ascii=False)
+        print(f"Conversation saved for user: {user_id}")
+    except Exception as e:
+        print(f"Failed to save conversation for {user_id}: {e}")
+
+
+# def load_initial_messages(user_id: str) -> list:
+#     """Load previous messages for a user at the start of a conversation"""
+#     user_file = DATA_DIR / f"{user_id}.json"
+#     if user_file.exists():
+#         try:
+#             with open(user_file, 'r') as f:
+#                 # Load previous messages
+#                 print(f"Loading initial messages for {user_id}...")
+#                 return json.load(f)
+#         except (IOError, json.JSONDecodeError) as e:
+#             print(f"Error loading initial messages for {user_id}: {e}")
+#             return []
+
+def load_initial_messages_as_string(user_id: str) -> str:
+    """Load previous messages and convert them to a plain string conversation log."""
     user_file = DATA_DIR / f"{user_id}.json"
     if user_file.exists():
         try:
-            with open(user_file, 'r') as f:
-                # Load previous messages
-                return json.load(f)
-        except (IOError, json.JSONDecodeError) as e:
-            print(f"Error loading initial messages for {user_id}: {e}")
-    return []
+            with open(user_file, 'r', encoding='utf-8') as f:
+                messages = json.load(f)
+                print(f"Loaded {len(messages)} messages for user: {user_id}")
 
+                conversation_str = ""
+                for msg in messages:
+                    speaker = msg.get("type", "unknown")
+                    content = msg.get("content", "")
+                    conversation_str += f"{speaker}: {content.strip()}\n\n"
+
+                return conversation_str.strip()
+
+        except Exception as e:
+            print(f"❌ Error loading messages for {user_id}: {e}")
+    return ""
 
 
 def start_recording(event, record_button=None, stop_button = None):
@@ -55,8 +88,6 @@ def start_recording(event, record_button=None, stop_button = None):
     is_recording = True
     recording_stream = sd.InputStream(callback=callback, samplerate=fs, channels=1)
     recording_stream.start()
-
-
 
 
 def stop_recording(event=None, record_button=None, stop_button=None):
@@ -106,6 +137,27 @@ def save_and_process_audio():
     text_to_speech(response)  # Calls the TTS function
 
 
+def save_conversation_history(user_id, new_conversation, data_dir):
+    user_file = data_dir / f"{user_id}.json"
+    all_messages = []
+
+    if user_file.exists():
+        try:
+            with open(user_file, "r", encoding="utf-8") as f:
+                all_messages = json.load(f)
+        except json.JSONDecodeError:
+            pass  # Continue with empty history
+
+    all_messages.extend(new_conversation)
+
+    try:
+        with open(user_file, "w", encoding="utf-8") as f:
+            json.dump(all_messages, f, indent=2, ensure_ascii=False)
+        print(f"Conversation appended for user: {user_id}")
+    except Exception as e:
+        print(f"Failed to save conversation for {user_id}: {e}")
+
+
 def add_message(text, side):
     """ Adds a new message bubble to the conversation """
     bg_color = "#74C365" if side == "left" else "#001F3F"
@@ -122,7 +174,11 @@ def add_message(text, side):
 
     chat_canvas.update_idletasks()
     chat_canvas.yview_moveto(1)  # Auto-scroll
-
+    
+    full_conversation.append({
+        "type": "human" if side == "right" else "ai",
+        "content": text
+    })
 
 def setup_ui():
     global root, chat_frame, chat_canvas,current_user_id,initial_messages
@@ -141,10 +197,11 @@ def setup_ui():
     def start_session():
         global current_user_id
         current_user_id = user_entry.get()
-        if not current_user_id:
-            current_user_id = "guest_" + str(int(time.time()))
-        initial_messages = load_initial_messages(current_user_id)
-        store_init_2(current_user_id,initial_messages,1)
+        # if not current_user_id:
+        #     current_user_id = "guest_" + str(int(time.time()))
+        print(f"Starting session for user: {current_user_id}")
+        initial_messages = load_initial_messages_as_string(current_user_id)
+        store_init_2(current_user_id, initial_messages,1)
         login_frame.destroy()
         create_chat_interface()
 
@@ -155,7 +212,8 @@ def setup_ui():
     #root.mainloop()
 
 def on_exit():
-    store_messages_on_exit(current_user_id, DATA_DIR,1)
+    # store_messages_on_exit(current_user_id, DATA_DIR,1)
+    save_conversation_history(current_user_id, full_conversation, DATA_DIR)
     root.destroy()
 
 def create_chat_interface():
