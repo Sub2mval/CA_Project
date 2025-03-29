@@ -84,7 +84,7 @@ def store_init_2(user_id: str, initial_messages: list, config_id: int):
     print(f"Initial messages for user {user_id}:\n{flattened}")
 
     checkpoint = {
-        "configurable": {"thread_id": user_id},
+        "configurable": {"thread_id": '1'},
         "values": {
             "messages": [
                 {

@@ -201,7 +201,7 @@ def setup_ui():
         #     current_user_id = "guest_" + str(int(time.time()))
         print(f"Starting session for user: {current_user_id}")
         initial_messages = load_initial_messages_as_string(current_user_id)
-        store_init_2(current_user_id, initial_messages,1)
+        # store_init_2(current_user_id, initial_messages,1)
         login_frame.destroy()
         create_chat_interface()
 
