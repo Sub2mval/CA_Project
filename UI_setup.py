@@ -4,10 +4,15 @@ import wave
 import tempfile
 import tkinter as tk
 from tkinter import ttk
+import json
+from pathlib import Path
+import os
 
 from textrecongnition.text_detection import process_audio
 from emorecognition.emreco import emo_predictor
 from chains.main import conversational_rag_chain
+from chains.main import store_init, store_messages_on_exit
+from chains.main import store_init_2, store_messages_on_exit_2
 from textrecongnition.text_to_speech import text_to_speech
 
 recording = []
@@ -15,11 +20,26 @@ is_recording = False
 fs = 16000  # Sampling rate
 recording_stream = None
 
+DATA_DIR = Path("data/user_data")
+os.makedirs(DATA_DIR, exist_ok=True)
 
 def callback(indata, frames, time, status):
     """ Callback function to store recorded audio """
     if is_recording:
         recording.append(indata.copy())
+
+def load_initial_messages(user_id: str) -> list:
+    """Load previous messages for a user at the start of a conversation"""
+    user_file = DATA_DIR / f"{user_id}.json"
+    if user_file.exists():
+        try:
+            with open(user_file, 'r') as f:
+                # Load previous messages
+                return json.load(f)
+        except (IOError, json.JSONDecodeError) as e:
+            print(f"Error loading initial messages for {user_id}: {e}")
+    return []
+
 
 
 def start_recording(event, record_button=None, stop_button = None):
@@ -104,14 +124,42 @@ def add_message(text, side):
 
 
 def setup_ui():
-    global root, chat_frame, chat_canvas
+    global root, chat_frame, chat_canvas,current_user_id,initial_messages
 
     root = tk.Tk()
     root.title("Voice Chat")
     root.attributes('-fullscreen', True)
     root.configure(bg="#F6F7ED")  # Background color
 
+    login_frame = tk.Frame(root)
+    login_frame.pack(pady=50)
+    tk.Label(login_frame, text="Enter your username (eg, can be your student ID):", font=("Arial", 16)).pack()
+    user_entry = tk.Entry(login_frame, font=("Arial", 16))
+    user_entry.pack(pady=10)
+
+    def start_session():
+        global current_user_id
+        current_user_id = user_entry.get()
+        if not current_user_id:
+            current_user_id = "guest_" + str(int(time.time()))
+        initial_messages = load_initial_messages(current_user_id)
+        store_init_2(current_user_id,initial_messages,1)
+        login_frame.destroy()
+        create_chat_interface()
+
+    tk.Button(login_frame, text="Start Session", command=start_session,
+              font=("Arial", 14), bg="#4CAF50", fg="white").pack()
+
+    root.mainloop()
+    #root.mainloop()
+
+def on_exit():
+    store_messages_on_exit(current_user_id, DATA_DIR,1)
+    root.destroy()
+
+def create_chat_interface():
     # Title Label
+    global chat_frame,chat_canvas
     title_label = tk.Label(root, text="How are you doing?", font=("Arial", 24, "bold"), fg="#00804C", bg="#F6F7ED")
     title_label.pack(pady=20)
 
@@ -144,11 +192,10 @@ def setup_ui():
     stop_button.bind("<ButtonRelease>", lambda event: stop_recording(event, record_button, stop_button))
     record_button.bind("<ButtonPress>", lambda event: start_recording(event, record_button, stop_button))
     # Exit Button (Centered below)
-    exit_button = tk.Button(root, text="Exit", command=root.destroy, font=("Arial", 14), bg="gray", fg="white",
+    exit_button = tk.Button(root, text="Exit", command=on_exit, font=("Arial", 14), bg="gray", fg="white",
                             width=15)
     exit_button.pack(pady=20)
 
-    root.mainloop()
 
 
 if __name__ == "__main__":

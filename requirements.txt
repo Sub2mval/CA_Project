@@ -10,7 +10,6 @@ librosa==0.10.2.post1
 torch==2.6.0
 pydub==0.25.1
 gTTS==2.5.4
-scipy~=1.13.1
 git+https://github.com/openai/whisper.git
 sounddevice==0.5.1
 PyAudio==0.2.11
@@ -143,7 +142,6 @@ terminado==0.18.1
 threadpoolctl==3.5.0
 tinycss2==1.4.0
 tokenizers==0.21.1
-torch==2.5.1+cpu
 tornado==6.4.2
 tqdm==4.67.1
 traitlets==5.14.3
