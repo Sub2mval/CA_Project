@@ -12,6 +12,8 @@ EMOTIONS = {0: 'Angry', 1: 'Sad', 2: 'Happy', 3: 'Surprise', 4: 'Fear', 5: 'Disg
 # Load models
 # Whisper model for speech recognition
 whisper_model = whisper.load_model("small")
+# Add the device
+# whisper_model.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Load Wav2Vec2 emotion model (we can change this to some other model bc this does not predict very well)
 # emotion_model_name = "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
 # processor = Wav2Vec2Processor.from_pretrained(emotion_model_name)
