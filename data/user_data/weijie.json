@@ -6,5 +6,37 @@
   {
     "type": "ai",
     "content": "================================== Ai Message ==================================\n\nHello! I'm here because I care about your well-being and want to help you manage your stress levels. It's completely normal to feel overwhelmed, especially with school and other responsibilities.\n\nCan you tell me a bit more about what's been going on that's making you feel stressed? Is it exams, assignments, relationships, or something else entirely? Sometimes talking about it can help us find ways to make things better.\n"
+  },
+  {
+    "type": "human",
+    "content": " How are you?"
+  },
+  {
+    "type": "ai",
+    "content": "================================== Ai Message ==================================\n\nI'm here to help and support you in any way I can. As a conversational AI, I don't have emotions like humans do, but I'm functioning properly and ready to assist you.\n\nSince you mentioned earlier that the student is feeling overwhelmed, I want to acknowledge their stress and offer some support. Would you like me to suggest some strategies or resources to help manage stress and anxiety?\n"
+  },
+  {
+    "type": "human",
+    "content": " How are you?"
+  },
+  {
+    "type": "ai",
+    "content": "================================== Ai Message ==================================\n\nI'm here to help and support you in any way I can. As a conversational AI, I don't have emotions like humans do, but I'm functioning properly and ready to assist you.\n\nSince you mentioned earlier that the student is feeling overwhelmed, I want to acknowledge their stress and offer some support. Would you like me to suggest some strategies or resources to help manage stress and anxiety?\n"
+  },
+  {
+    "type": "human",
+    "content": "Hello!"
+  },
+  {
+    "type": "ai",
+    "content": "================================== Ai Message ==================================\n\nHello! I can tell that you're feeling a bit overwhelmed and stressed out, which is totally normal for students. Would you like to talk about what's on your mind? Is it related to schoolwork, exams, or something else entirely? Sometimes sharing what's bothering you can help you feel better and gain a fresh perspective. I'm here to listen and offer any support I can!\n"
+  },
+  {
+    "type": "human",
+    "content": "Hello!"
+  },
+  {
+    "type": "ai",
+    "content": "================================== Ai Message ==================================\n\nI can sense that you're feeling overwhelmed and stressed out. As a supportive listener, I want to acknowledge that it's completely normal to feel this way, especially during academic periods.\n\nTo help you relax and reduce stress, let's take a deep breath together. Inhale... exhale...\n\nNow, tell me more about what's been going on that's making you feel stressed. Is it the workload, exams, or something else? Sometimes sharing your concerns with someone who cares can help you gain a fresh perspective.\n\nAlso, I want to remind you that you're not alone in this feeling. Many students face similar challenges, and there are resources available to support you.\n\nWhat do you say we explore some strategies together to help you manage your stress levels? We could talk about:\n\n1. Time management techniques\n2. Prioritizing tasks\n3. Self-care activities\n4. Seeking support from friends, family, or a counselor\n\nWhich one of these options resonates with you, or is there something else on your mind that you'd like to discuss?\n"
   }
 ]

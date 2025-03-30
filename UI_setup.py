@@ -12,8 +12,8 @@ import time
 from textrecongnition.text_detection import process_audio
 from emorecognition.emreco import emo_predictor
 from chains.main import conversational_rag_chain
-from chains.main import store_init, store_messages_on_exit
-from chains.main import store_init_2, store_messages_on_exit_2
+# from chains.main import store_init, store_messages_on_exit
+# from chains.main import store_init_2, store_messages_on_exit_2
 from textrecongnition.text_to_speech import text_to_speech
 from langgraph.checkpoint.memory import MemorySaver
 
@@ -31,14 +31,14 @@ def callback(indata, frames, time, status):
     if is_recording:
         recording.append(indata.copy())
 
-def save_conversation_history(user_id, conversation, data_dir):
-    user_file = data_dir / f"{user_id}.json"
-    try:
-        with open(user_file, "w", encoding="utf-8") as f:
-            json.dump(conversation, f, indent=2, ensure_ascii=False)
-        print(f"Conversation saved for user: {user_id}")
-    except Exception as e:
-        print(f"Failed to save conversation for {user_id}: {e}")
+# def save_conversation_history(user_id, conversation, data_dir):
+#     user_file = data_dir / f"{user_id}.json"
+#     try:
+#         with open(user_file, "w", encoding="utf-8") as f:
+#             json.dump(conversation, f, indent=2, ensure_ascii=False)
+#         print(f"Conversation saved for user: {user_id}")
+#     except Exception as e:
+#         print(f"Failed to save conversation for {user_id}: {e}")
 
 
 # def load_initial_messages(user_id: str) -> list:
@@ -111,8 +111,14 @@ def stop_recording(event=None, record_button=None, stop_button=None):
     save_and_process_audio()
 
 
-def chain_response(text_result):
-    return conversational_rag_chain({"context": text_result["emotions"], "input": text_result["text"]}, 1)
+# def chain_response(text_result, history = ''):
+#     return conversational_rag_chain({"context": text_result["emotions"], "input": text_result["text"]}, 1)
+def chain_response(text_result, history_context=""):
+    context_input = f"{history_context.strip()}\n\n{text_result['emotions']}".strip()
+    return conversational_rag_chain({
+        "context": context_input,
+        "input": text_result["text"]
+    }, 1)
 
 
 def save_and_process_audio():
@@ -181,7 +187,7 @@ def add_message(text, side):
     })
 
 def setup_ui():
-    global root, chat_frame, chat_canvas,current_user_id,initial_messages
+    global root, chat_frame, chat_canvas,current_user_id, initial_messages
 
     root = tk.Tk()
     root.title("Voice Chat")
@@ -194,16 +200,35 @@ def setup_ui():
     user_entry = tk.Entry(login_frame, font=("Arial", 16))
     user_entry.pack(pady=10)
 
+    # def start_session():
+    #     global current_user_id
+    #     current_user_id = user_entry.get()
+    #     # if not current_user_id:
+    #     #     current_user_id = "guest_" + str(int(time.time()))
+    #     print(f"Starting session for user: {current_user_id}")
+    #     initial_messages = load_initial_messages_as_string(current_user_id)
+    #     # store_init_2(current_user_id, initial_messages,1)
+    #     login_frame.destroy()
+    
+    
+    #     create_chat_interface()
     def start_session():
-        global current_user_id
+        global current_user_id, initial_messages
         current_user_id = user_entry.get()
-        # if not current_user_id:
-        #     current_user_id = "guest_" + str(int(time.time()))
         print(f"Starting session for user: {current_user_id}")
+        
+        # Load history as string
         initial_messages = load_initial_messages_as_string(current_user_id)
-        # store_init_2(current_user_id, initial_messages,1)
+        
         login_frame.destroy()
         create_chat_interface()
+
+        # 👇 Inject initial greeting with history as RAG context
+        greeting_input = {"text": "hello", "emotions": "neutral"}
+        greeting_response = chain_response(greeting_input, history_context=initial_messages)
+        # add_message("Hello!", "right")  # Display the user's greeting
+        add_message(greeting_response, "left")  # Display the bot's first response
+        text_to_speech(greeting_response)
 
     tk.Button(login_frame, text="Start Session", command=start_session,
               font=("Arial", 14), bg="#4CAF50", fg="white").pack()

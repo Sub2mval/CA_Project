@@ -50,66 +50,66 @@ workflow.add_node("model", call_model)
 memory = MemorySaver()
 app = workflow.compile(checkpointer=memory)
 
-def store_init_2(user_id: str, initial_messages: list, config_id: int):
-    """
-    Store initial messages for a user globally and in LangGraph memory as a checkpoint.
+# def store_init_2(user_id: str, initial_messages: list, config_id: int):
+#     """
+#     Store initial messages for a user globally and in LangGraph memory as a checkpoint.
 
-    The messages are flattened into a single string and stored in a system message.
-    """
-    global messages_store, memory
+#     The messages are flattened into a single string and stored in a system message.
+#     """
+#     global messages_store, memory
 
-    messages_store[user_id] = initial_messages
+#     messages_store[user_id] = initial_messages
 
-    if not initial_messages:
-        print(f"No initial messages for user {user_id}. Skipping checkpoint.")
-        return
+#     if not initial_messages:
+#         print(f"No initial messages for user {user_id}. Skipping checkpoint.")
+#         return
 
-    # 🧠 Flatten messages into a readable conversation string
-    def flatten_messages(messages: list) -> str:
-        lines = []
-        for msg in messages:
-            if isinstance(msg, dict):
-                speaker = msg.get("type", "unknown")
-                content = msg.get("content", "").strip()
-                lines.append(f"{speaker}: {content}")
-            elif isinstance(msg, str):
-                # fallback: just append the string as-is
-                lines.append(msg.strip())
-            else:
-                lines.append(f"[Unrecognized message type: {msg}]")
-        return "\n\n".join(lines)
+#     # 🧠 Flatten messages into a readable conversation string
+#     def flatten_messages(messages: list) -> str:
+#         lines = []
+#         for msg in messages:
+#             if isinstance(msg, dict):
+#                 speaker = msg.get("type", "unknown")
+#                 content = msg.get("content", "").strip()
+#                 lines.append(f"{speaker}: {content}")
+#             elif isinstance(msg, str):
+#                 # fallback: just append the string as-is
+#                 lines.append(msg.strip())
+#             else:
+#                 lines.append(f"[Unrecognized message type: {msg}]")
+#         return "\n\n".join(lines)
 
-    flattened = flatten_messages(initial_messages)
+#     flattened = flatten_messages(initial_messages)
 
-    print(f"Initial messages for user {user_id}:\n{flattened}")
+#     print(f"Initial messages for user {user_id}:\n{flattened}")
 
-    checkpoint = {
-        "configurable": {"thread_id": '1'},
-        "values": {
-            "messages": [
-                {
-                    "type": "system",
-                    "content": flattened,
-                    "pending_sends": []  # required to avoid KeyError
-                }
-            ],
-            "pending_sends": []
-        },
-        "metadata": {"source": "flat_string"},
-        "new_versions": True,
-        "parent_config": None
-    }
+#     checkpoint = {
+#         "configurable": {"thread_id": '1'},
+#         "values": {
+#             "messages": [
+#                 {
+#                     "type": "system",
+#                     "content": flattened,
+#                     "pending_sends": []  # required to avoid KeyError
+#                 }
+#             ],
+#             "pending_sends": []
+#         },
+#         "metadata": {"source": "flat_string"},
+#         "new_versions": True,
+#         "parent_config": None
+#     }
 
-    try:
-        memory.put(
-            config={"configurable": {"thread_id": user_id}},
-            checkpoint=checkpoint,
-            new_versions=True,
-            metadata={}
-        )
-        print(f"✅ Checkpoint successfully stored for user {user_id}")
-    except Exception as e:
-        print(f"❌ Failed to store checkpoint for user {user_id}: {e}")
+#     try:
+#         memory.put(
+#             config={"configurable": {"thread_id": user_id}},
+#             checkpoint=checkpoint,
+#             new_versions=True,
+#             metadata={}
+#         )
+#         print(f"✅ Checkpoint successfully stored for user {user_id}")
+#     except Exception as e:
+#         print(f"❌ Failed to store checkpoint for user {user_id}: {e}")
 
 # def store_init_2(user_id: str, initial_messages: list, config_id: int):
 #     """Store initial messages for a user globally and in memory checkpoint."""
@@ -181,47 +181,47 @@ def store_init_2(user_id: str, initial_messages: list, config_id: int):
 #     # )
 #     # memory.put(checkpoint)
 
-def store_messages_on_exit_2(user_id: str, data_dir: Path, config_id: int):
-    """Store all messages (old + new) from memory checkpoint when the user exits."""
-    config = {"configurable": {"thread_id": config_id}}
-    try:
-        # Get all messages from memory checkpoint
-        checkpoint = memory.get(config)
-        if checkpoint and "values" in checkpoint and "messages" in checkpoint["values"]:
-            all_messages = checkpoint["values"]["messages"]
+# def store_messages_on_exit_2(user_id: str, data_dir: Path, config_id: int):
+#     """Store all messages (old + new) from memory checkpoint when the user exits."""
+#     config = {"configurable": {"thread_id": config_id}}
+#     try:
+#         # Get all messages from memory checkpoint
+#         checkpoint = memory.get(config)
+#         if checkpoint and "values" in checkpoint and "messages" in checkpoint["values"]:
+#             all_messages = checkpoint["values"]["messages"]
 
-            # Save to file
-            user_file = data_dir / f"{user_id}.json"
-            # Convert messages to serializable format
-            serializable_messages = []
-            for msg in all_messages:
-                serializable_messages.append({
-                    "type": msg.type,
-                    "content": msg.content
-                })
+#             # Save to file
+#             user_file = data_dir / f"{user_id}.json"
+#             # Convert messages to serializable format
+#             serializable_messages = []
+#             for msg in all_messages:
+#                 serializable_messages.append({
+#                     "type": msg.type,
+#                     "content": msg.content
+#                 })
 
-            with open(user_file, 'w') as f:
-                json.dump(serializable_messages, f, indent=4)
-    except Exception as e:
-        print(f"Error storing messages for {user_id}: {e}")
+#             with open(user_file, 'w') as f:
+#                 json.dump(serializable_messages, f, indent=4)
+#     except Exception as e:
+#         print(f"Error storing messages for {user_id}: {e}")
 
-def store_init(user_id: str, initial_messages: list, config_id: int):
-    """Store initial messages for a user globally."""
-    global messages_store
-    if(len(initial_messages)==0):
-        return
-    messages_store[user_id] = initial_messages
+# def store_init(user_id: str, initial_messages: list, config_id: int):
+#     """Store initial messages for a user globally."""
+#     global messages_store
+#     if(len(initial_messages)==0):
+#         return
+#     messages_store[user_id] = initial_messages
 
-def store_messages_on_exit(user_id: str, data_dir: Path, config_id: int):
-    """Store all messages when the user exits."""
-    user_file = data_dir / f"{user_id}.json"
-    try:
-        with open(user_file, 'w') as f:
-            json.dump(messages_store.get(user_id, ["no messages"]), f, indent=4)
-            print(f"Stored messages for {user_id} in {user_file}")
-            print(f"Messages: {messages_store.get(user_id, ['no messages'])}")
-    except IOError as e:
-        print(f"Error storing messages for {user_id}: {e}")
+# def store_messages_on_exit(user_id: str, data_dir: Path, config_id: int):
+#     """Store all messages when the user exits."""
+#     user_file = data_dir / f"{user_id}.json"
+#     try:
+#         with open(user_file, 'w') as f:
+#             json.dump(messages_store.get(user_id, ["no messages"]), f, indent=4)
+#             print(f"Stored messages for {user_id} in {user_file}")
+#             print(f"Messages: {messages_store.get(user_id, ['no messages'])}")
+#     except IOError as e:
+#         print(f"Error storing messages for {user_id}: {e}")
 
 class MessagesState(TypedDict):
     language: str
