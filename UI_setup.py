@@ -114,11 +114,12 @@ def stop_recording(event=None, record_button=None, stop_button=None):
 # def chain_response(text_result, history = ''):
 #     return conversational_rag_chain({"context": text_result["emotions"], "input": text_result["text"]}, 1)
 def chain_response(text_result, history_context=""):
-    context_input = f"{history_context.strip()}\n\n{text_result['emotions']}".strip()
+    combined_input = f"{history_context.strip()}\n\n{text_result['text']}".strip()
     return conversational_rag_chain({
-        "context": context_input,
-        "input": text_result["text"]
+        "context": text_result["emotions"],
+        "input": combined_input
     }, 1)
+
 
 
 def save_and_process_audio():
@@ -224,7 +225,7 @@ def setup_ui():
         create_chat_interface()
 
         # 👇 Inject initial greeting with history as RAG context
-        greeting_input = {"text": "hello", "emotions": "neutral"}
+        greeting_input = {"text": "Here you have the conversational histroy of student: ", "emotions": "neutral"}
         greeting_response = chain_response(greeting_input, history_context=initial_messages)
         # add_message("Hello!", "right")  # Display the user's greeting
         add_message(greeting_response, "left")  # Display the bot's first response
