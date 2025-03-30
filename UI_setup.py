@@ -225,7 +225,7 @@ def setup_ui():
         create_chat_interface()
 
         # 👇 Inject initial greeting with history as RAG context
-        greeting_input = {"text": "Here you have the conversational histroy of student: ", "emotions": "neutral"}
+        greeting_input = {"text": "Here you have the conversational histroy of student, if you get no histroy, generate greeting", "emotions": "neutral"}
         greeting_response = chain_response(greeting_input, history_context=initial_messages)
         # add_message("Hello!", "right")  # Display the user's greeting
         add_message(greeting_response, "left")  # Display the bot's first response
