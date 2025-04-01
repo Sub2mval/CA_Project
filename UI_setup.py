@@ -88,11 +88,12 @@ def start_recording(event, record_button=None, stop_button = None):
     is_recording = True
     recording_stream = sd.InputStream(callback=callback, samplerate=fs, channels=1)
     recording_stream.start()
+    print("Debug 1 started recording")
 
 
 def stop_recording(event=None, record_button=None, stop_button=None):
     """ Stops recording when button is released """
-
+    print("Debug 2 stop recording strted ")
     # Reset Start button appearance
     if record_button:
         record_button.config(relief=tk.RAISED, bg="#74C365")  # Original greenish-teal
@@ -103,11 +104,12 @@ def stop_recording(event=None, record_button=None, stop_button=None):
     global is_recording, recording_stream
     is_recording = False
 
+    print("Debug 3 start the recording stream")
     if recording_stream:
         recording_stream.stop()
         recording_stream.close()
         recording_stream = None
-
+    print("Debug 4 going into save and process audio")
     save_and_process_audio()
 
 
@@ -124,10 +126,13 @@ def chain_response(text_result, history_context=""):
 
 def save_and_process_audio():
     """ Saves recorded audio and processes it """
+
     if not recording:
+        print("if not recording return")
         return
 
     audio_data = np.concatenate(recording, axis=0)
+    print("Making audio data")
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_wav:
         with wave.open(temp_wav.name, 'wb') as wf:
             wf.setnchannels(1)
@@ -135,10 +140,16 @@ def save_and_process_audio():
             wf.setframerate(fs)
             wf.writeframes((audio_data * 32767).astype(np.int16).tobytes())
 
+
     result = process_audio(temp_wav.name)
+    print("just processed audio data")
+
     add_message(result["text"], "right")  # User message
+    print("Added message of you")
     response = chain_response(result)
+    print("Chained response ")
     add_message(response, "left")  # Bot response
+    print("Added message of bot")
 
     # Speak out the AI response
     text_to_speech(response)  # Calls the TTS function

@@ -7,6 +7,7 @@ def clean_ai_response(response):
     """ Remove AI message headers like ===== AI MESSAGE ===== """
     return re.sub(r"=+\s* Ai Message \s*=+\s*", "", response).strip()
 def text_to_speech(text, output_file="data/output/output_2.mp3", lang="en"):
+    print("Start speaking text of ai")
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     cleaned_text = clean_ai_response(text)
     print("cleaned = ", cleaned_text)
