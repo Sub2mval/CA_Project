@@ -90,3 +90,4 @@ python ui/UI_setup.py
 
 🚀 Now you can use `emo_predictor` for emotion detection, `process_audio` for text detection, and the interactive UI for real-time voice chat analysis! 🎤
 
+### For the control group we used the branch 'memory_per_user_no_memory'
